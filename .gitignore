@@ -1,0 +1,45 @@
+<system>
+  workers 1
+  log_level trace
+</system>
+
+<source>
+  @type tail
+  path /home/ubuntu/uat-crm1/storage/logs/laravel-*.log
+  pos_file /var/log/td-agent/buffer/crm1buf.pos
+  format /\[(?<timestamp>.*)\] testing\.(?<severity>.*?)\:(?<message>.*)/
+  tag crm.crm1
+</source>
+
+<filter crm.*>
+  @type record_transformer
+  auto_typecast true
+</filter>
+
+<match crm.crm1>
+  @type copy
+  <store>
+        @type elasticsearch
+        scheme http
+        host 192.1.0.117
+        port 9200
+        user elastic
+        password 6jPIflC=PcLB9chPTtGX
+        include_tag_key true
+	logstash_prefix crm1
+	logstash_format true
+	tag_key @log_name
+	validate_client_version true	
+  </store>
+  <buffer>
+	@type file
+	path /var/log/td-agent/buffer/
+	chunk_limit_size 5m
+	total_limit_size 5g
+	flush_mode interval
+	flush_interval 10s
+	flush_thread_count 8
+	overflow_action drop_oldest_chunk
+	retry_wait 5s
+  </buffer>
+</match>
